@@ -1,4 +1,4 @@
-package com.guide.upc.backend.Exception;
+package com.guide.upc.backend.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
