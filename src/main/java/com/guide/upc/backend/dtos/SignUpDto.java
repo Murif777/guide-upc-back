@@ -1,5 +1,6 @@
 package com.guide.upc.backend.dtos;
 
+import io.micrometer.common.lang.Nullable;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,5 +24,6 @@ public class SignUpDto {
 
     @NotEmpty
     private char[] contraseña;
-
+    @Nullable
+    private String foto;
 }

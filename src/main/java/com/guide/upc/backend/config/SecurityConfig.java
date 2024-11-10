@@ -32,8 +32,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorizeRequests -> 
                 authorizeRequests
                     .requestMatchers(HttpMethod.POST, "/login", "/register").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/profile").authenticated()
                     .anyRequest().authenticated()
             );
-        return http.build(); // Asegúrate de que build() se llama solo una vez aquí
+        return http.build(); 
     }
 }

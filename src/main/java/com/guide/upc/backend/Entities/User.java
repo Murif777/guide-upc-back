@@ -34,4 +34,7 @@ public class User {
     @Column(nullable = false)
     @Size(max = 100)
     private String contraseña;
+
+    @Column(name = "foto", nullable = true)
+    private String foto;
 }
