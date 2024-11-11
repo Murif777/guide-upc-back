@@ -3,6 +3,7 @@ package com.guide.upc.backend.config;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.guide.upc.backend.dtos.UserDto;
 import com.guide.upc.backend.services.UserService;
@@ -35,26 +36,28 @@ public class UserAuthenticationProvider {
     public String createToken(String login) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + 3600000); // 1 hour
-
+    
         Algorithm algorithm = Algorithm.HMAC256(secretKey);
-        return JWT.create()
+        String token = JWT.create()
                 .withSubject(login)
                 .withIssuedAt(now)
                 .withExpiresAt(validity)
                 .sign(algorithm);
+        
+        System.out.println("Token created for user: " + login);
+        return token;
     }
 
     public Authentication validateToken(String token) {
-        Algorithm algorithm = Algorithm.HMAC256(secretKey);
-
-        JWTVerifier verifier = JWT.require(algorithm)
-                .build();
-
-        DecodedJWT decoded = verifier.verify(token);
-
-        UserDto user = userService.findByLogin(decoded.getSubject());
-
-        return new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(secretKey);
+            JWTVerifier verifier = JWT.require(algorithm).build();
+            DecodedJWT decoded = verifier.verify(token);
+            UserDto user = userService.findByLogin(decoded.getSubject());
+            return new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
+        } catch (JWTVerificationException e) {
+            throw new RuntimeException("Invalid token: " + e.getMessage());
+        }
     }
 
 }

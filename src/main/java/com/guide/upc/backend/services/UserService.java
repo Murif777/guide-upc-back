@@ -60,8 +60,10 @@ public class UserService {
     }
 
     public UserDto findByLogin(String login) {
+
         User user = userRepository.findByLogin(login)
                 .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
+                System.out.println("login SERVICE: "+user);
         return userMapper.toUserDto(user);
     }
 

@@ -16,7 +16,6 @@ import java.net.URI;
 
 @RequiredArgsConstructor
 @RestController
-
 public class AuthController {
 
     private final UserService userService;
@@ -56,9 +55,28 @@ public class AuthController {
     }
     @GetMapping("/profile") 
     public ResponseEntity<UserDto> getUserProfile(Authentication authentication) { 
-        String login = authentication.getName(); // Obtén el login del usuario autenticado 
-        UserDto userDto = userService.findByLogin(login); 
-        System.out.println("perfil a enviar CONTROLLER: "+userDto);
+        if (authentication == null || !authentication.isAuthenticated()) {
+            System.out.println("Autenticación fallida");
+            return ResponseEntity.status(401).build();
+        }
+    
+        String login = authentication.getName();
+        System.out.println("Usuario autenticado CONTROLLER: " + login);
+    
+        UserDto userDto = userService.findByLogin(login);
+        
+        if (userDto == null) {
+            System.out.println("Perfil de usuario no encontrado");
+            return ResponseEntity.status(404).build();
+        }
+    
+        // Establece el token en el `UserDto`
+        String token = userAuthenticationProvider.createToken(userDto.getLogin());
+        userDto.setToken(token);  // Asegúrate de que este método esté presente en UserDto.
+    
+        System.out.println("Perfil a enviar CONTROLLER: " + userDto);
         return ResponseEntity.ok(userDto); 
     }
+    
+
 }
