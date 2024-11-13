@@ -33,10 +33,11 @@ public class SecurityConfig {
                 authorizeRequests
                     .requestMatchers(HttpMethod.POST, "/login", "/register").permitAll()
                     .requestMatchers(HttpMethod.GET, "/profile").authenticated()
-                    .requestMatchers(HttpMethod.GET, "/api/lugares/**").authenticated() // Proteger rutas GET para lugares
-                    .requestMatchers(HttpMethod.POST, "/api/lugares/**").authenticated() // Proteger rutas POST para lugares
-                    .requestMatchers(HttpMethod.PUT, "/api/lugares/**").authenticated() // Proteger rutas PUT para lugares
-                    .requestMatchers(HttpMethod.DELETE, "/api/lugares/**").authenticated() // Proteger rutas DELETE para lugares
+                    .requestMatchers(HttpMethod.GET, "/api/lugares/**").authenticated()
+                    .requestMatchers(HttpMethod.POST, "/api/lugares/**").authenticated() 
+                    .requestMatchers(HttpMethod.PUT, "/api/lugares/**").authenticated() 
+                    .requestMatchers(HttpMethod.DELETE, "/api/lugares/**").authenticated() 
+                    .requestMatchers(HttpMethod.PUT, "/update/{login}").authenticated()
                     .anyRequest().authenticated()
             );
         return http.build(); 

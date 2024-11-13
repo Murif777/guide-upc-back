@@ -4,6 +4,7 @@ import com.guide.upc.backend.config.UserAuthenticationProvider;
 import com.guide.upc.backend.dtos.CredentialsDto;
 import com.guide.upc.backend.dtos.SignUpDto;
 import com.guide.upc.backend.dtos.UserDto;
+import com.guide.upc.backend.entities.User;
 import com.guide.upc.backend.services.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class AuthController {
 
     private final UserService userService;
     private final UserAuthenticationProvider userAuthenticationProvider;
+    
 
     @PostMapping("/login")
     public ResponseEntity<UserDto> login(@RequestBody @Valid CredentialsDto credentialsDto) {
@@ -38,16 +40,17 @@ public class AuthController {
         return ResponseEntity.created(URI.create("/usuarios/" + createdUser.getId())).body(createdUser);
     }
 
-    @PutMapping("/update/{id}")
-    public ResponseEntity<UserDto> updateUser(
-        @PathVariable Long id,
+    @PutMapping("/update/{login}")
+    public ResponseEntity<User> updateUser(
+        @PathVariable String login,
         @RequestParam String nombre,
         @RequestParam String apellido,
         @RequestParam String contraseña,
         @RequestParam(value = "foto", required = false) MultipartFile foto
     ) {
         try {
-            UserDto updatedUser = userService.updateUser(id, nombre, apellido, contraseña, foto);
+            User updatedUser = userService.updateUser(login,nombre, apellido, contraseña,foto);
+            System.out.println("-USUARIO ACTUALIZADO CONTROOLLER: "+updatedUser);
             return ResponseEntity.ok(updatedUser);
         } catch (Exception e) {
             throw new RuntimeException("Error al actualizar los datos del usuario", e);
@@ -60,23 +63,27 @@ public class AuthController {
             return ResponseEntity.status(401).build();
         }
     
-        String login = authentication.getName();
-        System.out.println("Usuario autenticado CONTROLLER: " + login);
-    
-        UserDto userDto = userService.findByLogin(login);
+        String userDtoString = authentication.getName();
+        System.out.println("Usuario autenticado CONTROLLER: " + userDtoString);
+
+        String login = extractLoginFromUserDto(userDtoString); 
         
-        if (userDto == null) {
+        System.out.println("Login extraído: " + login);
+        UserDto user = userService.findByLogin(login);
+        
+        if (user == null) {
             System.out.println("Perfil de usuario no encontrado");
             return ResponseEntity.status(404).build();
         }
-    
-        // Establece el token en el `UserDto`
-        String token = userAuthenticationProvider.createToken(userDto.getLogin());
-        userDto.setToken(token);  // Asegúrate de que este método esté presente en UserDto.
-    
-        System.out.println("Perfil a enviar CONTROLLER: " + userDto);
-        return ResponseEntity.ok(userDto); 
+        return ResponseEntity.ok(user); 
     }
-    
+    private String extractLoginFromUserDto(String userDtoString) { 
+        String loginPrefix = "login="; 
+        int loginStart = userDtoString.indexOf(loginPrefix) + loginPrefix.length(); 
+        int loginEnd = userDtoString.indexOf(',', loginStart); 
+        if (loginEnd == -1) { loginEnd = userDtoString.indexOf(')', loginStart); 
+        } 
+        return userDtoString.substring(loginStart, loginEnd).trim(); 
+    }
 
 }

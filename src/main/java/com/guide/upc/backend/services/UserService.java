@@ -63,15 +63,22 @@ public class UserService {
 
         User user = userRepository.findByLogin(login)
                 .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
-                System.out.println("login SERVICE: "+user);
+                System.out.println("login SERVICE USERDTO: "+user);
         return userMapper.toUserDto(user);
+    }
+    public User findByLoginUser(String login) {
+        User user = userRepository.findByLogin(login)
+                .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
+                System.out.println("login SERVICE USER: "+user);
+        return user;
     }
 
     // Método actualizado para no permitir cambiar el campo login
-    public UserDto updateUser(Long userId, String nombre, String apellido, String contraseña, MultipartFile foto) throws IOException {
-        User user = userRepository.findById(userId)
+    public User updateUser(String login,String nombre, String apellido, String contraseña,  MultipartFile foto) throws IOException {
+        User user = userRepository.findByLogin(login)
+                
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
-        
+        System.out.println("-- USUARIO ENCONTRADO :"+user);
         user.setNombre(nombre);
         user.setApellido(apellido);
         user.setContraseña(passwordEncoder.encode(CharBuffer.wrap(contraseña)));
@@ -82,7 +89,8 @@ public class UserService {
         }
 
         User updatedUser = userRepository.save(user);
-        return userMapper.toUserDto(updatedUser);
+        System.out.println("--- USUARIO ACTUALIZADO SERVICE: "+updatedUser);
+        return updatedUser;
     }
 
     private String savePhoto(MultipartFile photo) throws IOException {
