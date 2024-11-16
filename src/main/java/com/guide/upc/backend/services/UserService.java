@@ -8,6 +8,7 @@ import com.guide.upc.backend.exceptions.AppException;
 import com.guide.upc.backend.mappers.UserMapper;
 import com.guide.upc.backend.repositories.UserRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,6 +34,7 @@ public class UserService {
 
     private final Path root = Paths.get("uploads"); // Directorio donde se guardarán las fotos
 
+    @Transactional()
     public UserDto login(CredentialsDto credentialsDto) {
         User user = userRepository.findByLogin(credentialsDto.getLogin())
                 .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
@@ -43,7 +45,7 @@ public class UserService {
         }
         throw new AppException("Invalid password", HttpStatus.BAD_REQUEST);
     }
-
+    @Transactional
     public UserDto register(SignUpDto userDto) {
         System.out.println("datos generado service: " + userDto);
         System.out.println("Contraseña recibida: " + userDto.getContraseña().toString());
@@ -61,6 +63,7 @@ public class UserService {
         return userMapper.toUserDto(savedUser);
     }
 
+    @Transactional
     public UserDto findByLogin(String login) {
 
         User user = userRepository.findByLogin(login)
@@ -71,7 +74,8 @@ public class UserService {
    
 
 
-    // Método actualizado para no permitir cambiar el campo login
+        // Método actualizado para no permitir cambiar el campo login
+        @Transactional
 public User updateUser(String login, Long id, String nombre, String apellido, MultipartFile foto) throws IOException {
         // Primero buscamos el usuario por login
         User user = userRepository.findByLogin(login)

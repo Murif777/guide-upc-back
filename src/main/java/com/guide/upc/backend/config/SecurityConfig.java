@@ -38,6 +38,8 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.PUT, "/api/lugares/**").authenticated() 
                     .requestMatchers(HttpMethod.DELETE, "/api/lugares/**").authenticated() 
                     .requestMatchers(HttpMethod.PUT, "/update/{login}").authenticated()
+                    .requestMatchers(HttpMethod.POST, "/api/rutas").authenticated() 
+                    .requestMatchers(HttpMethod.GET, "/api/rutas/usuario/{usuarioId}").authenticated()
                     .requestMatchers("/uploads/**").permitAll() //
                     .anyRequest().authenticated()
             );
