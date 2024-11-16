@@ -19,7 +19,9 @@ import java.nio.CharBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
@@ -66,40 +68,81 @@ public class UserService {
                 System.out.println("login SERVICE USERDTO: "+user);
         return userMapper.toUserDto(user);
     }
-    public User findByLoginUser(String login) {
-        User user = userRepository.findByLogin(login)
-                .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
-                System.out.println("login SERVICE USER: "+user);
-        return user;
-    }
+   
+
 
     // Método actualizado para no permitir cambiar el campo login
-    public User updateUser(String login,String nombre, String apellido, String contraseña,  MultipartFile foto) throws IOException {
+public User updateUser(String login, Long id, String nombre, String apellido, MultipartFile foto) throws IOException {
+        // Primero buscamos el usuario por login
         User user = userRepository.findByLogin(login)
-                
-                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
-        System.out.println("-- USUARIO ENCONTRADO :"+user);
-        user.setNombre(nombre);
-        user.setApellido(apellido);
-        user.setContraseña(passwordEncoder.encode(CharBuffer.wrap(contraseña)));
-
-        if (foto != null && !foto.isEmpty()) {
-            String photoPath = savePhoto(foto); // Guardar la foto y obtener la ruta
-            user.setFoto(photoPath);// Actualizar la entidad User con la URL de la foto
+                .orElseThrow(() -> new AppException("Usuario no encontrado", HttpStatus.NOT_FOUND));
+        
+        System.out.println("-- USUARIO ENCONTRADO: " + user);
+        
+        // Validar que el ID coincida con el usuario encontrado
+        if (!user.getId().equals(id)) {
+            throw new AppException("ID de usuario no coincide", HttpStatus.BAD_REQUEST);
         }
 
-        User updatedUser = userRepository.save(user);
-        System.out.println("--- USUARIO ACTUALIZADO SERVICE: "+updatedUser);
-        return updatedUser;
+        // Actualizar los campos
+        user.setNombre(nombre != null ? nombre : user.getNombre());
+        user.setApellido(apellido != null ? apellido : user.getApellido());
+
+        // Manejar la foto solo si se proporciona una nueva
+        if (foto != null && !foto.isEmpty()) {
+            try {
+                // Si existe una foto anterior, intentar eliminarla
+                if (user.getFoto() != null && !user.getFoto().isEmpty()) {
+                    try {
+                        Path oldPhotoPath = Paths.get(user.getFoto());
+                        Files.deleteIfExists(oldPhotoPath);
+                    } catch (IOException e) {
+                        System.err.println("No se pudo eliminar la foto anterior: " + e.getMessage());
+                        // Continuamos con la actualización aunque no se pueda eliminar la foto anterior
+                    }
+                }
+
+                String photoPath = savePhoto(foto);
+                System.out.println("----FOTO PATH: "+photoPath);
+                user.setFoto(photoPath);
+            } catch (IOException e) {
+                throw new AppException("Error al guardar la foto: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+
+        // Guardar los cambios
+        try {
+            User updatedUser = userRepository.save(user);
+            System.out.println("--- USUARIO ACTUALIZADO SERVICE: " + updatedUser);
+            return updatedUser;
+        } catch (Exception e) {
+            throw new AppException("Error al actualizar el usuario: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     private String savePhoto(MultipartFile photo) throws IOException {
+        // Asegurar que el directorio existe
         if (!Files.exists(root)) {
             Files.createDirectories(root);
         }
-        String fileName = System.currentTimeMillis() + "-" + photo.getOriginalFilename();
+
+        // Generar un nombre único para el archivo
+        String originalFilename = photo.getOriginalFilename();
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        String fileName = System.currentTimeMillis() + "-" + UUID.randomUUID().toString() + extension;
+
+        // Crear la ruta completa
         Path filePath = root.resolve(fileName);
-        Files.copy(photo.getInputStream(), filePath);
-        return filePath.toString(); // Devolver la ruta del archivo
+
+        // Copiar el archivo
+        try {
+            Files.copy(photo.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            return filePath.toString();
+        } catch (IOException e) {
+            throw new IOException("No se pudo guardar la foto: " + e.getMessage());
+        }
     }
 }

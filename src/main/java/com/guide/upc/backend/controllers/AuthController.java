@@ -8,6 +8,8 @@ import com.guide.upc.backend.entities.User;
 import com.guide.upc.backend.services.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -41,19 +43,40 @@ public class AuthController {
     }
 
     @PutMapping("/update/{login}")
-    public ResponseEntity<User> updateUser(
+    public ResponseEntity<?> updateUser(
         @PathVariable String login,
-        @RequestParam String nombre,
-        @RequestParam String apellido,
-        @RequestParam String contraseña,
-        @RequestParam(value = "foto", required = false) MultipartFile foto
+        @RequestParam(required = true) String id,
+        @RequestParam(required = true) String nombre,
+        @RequestParam(required = true) String apellido,
+        @RequestParam(required = false) MultipartFile foto
     ) {
         try {
-            User updatedUser = userService.updateUser(login,nombre, apellido, contraseña,foto);
-            System.out.println("-USUARIO ACTUALIZADO CONTROOLLER: "+updatedUser);
+            // Convertir el ID a Long de manera segura
+            Long userId;
+            try {
+                userId = Long.parseLong(id);
+            } catch (NumberFormatException e) {
+                return ResponseEntity
+                    .badRequest()
+                    
+                    .body("ID de usuario inválido "+id);
+            }
+
+            // Validaciones básicas
+            if (nombre == null || nombre.trim().isEmpty() ||
+                apellido == null || apellido.trim().isEmpty() ) {
+                return ResponseEntity
+                    .badRequest()
+                    .body("Todos los campos son requeridos");
+            }
+
+            User updatedUser = userService.updateUser(login, userId, nombre, apellido, foto);
+        System.out.println("Usuario actualizado CONTROLLER: " + updatedUser);
             return ResponseEntity.ok(updatedUser);
         } catch (Exception e) {
-            throw new RuntimeException("Error al actualizar los datos del usuario", e);
+            return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error al actualizar los datos del usuario: " + e.getMessage());
         }
     }
     @GetMapping("/profile") 
