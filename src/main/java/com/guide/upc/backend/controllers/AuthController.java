@@ -3,6 +3,7 @@ package com.guide.upc.backend.controllers;
 import com.guide.upc.backend.config.UserAuthenticationProvider;
 import com.guide.upc.backend.dtos.CredentialsDto;
 import com.guide.upc.backend.dtos.SignUpDto;
+import com.guide.upc.backend.dtos.UpdatePasswordDto;
 import com.guide.upc.backend.dtos.UserDto;
 import com.guide.upc.backend.entities.User;
 import com.guide.upc.backend.services.UserService;
@@ -79,6 +80,36 @@ public class AuthController {
                 .body("Error al actualizar los datos del usuario: " + e.getMessage());
         }
     }
+    
+    @PutMapping("/update-password") 
+    public ResponseEntity<?> updatePassword(@RequestBody @Valid UpdatePasswordDto updatePasswordDto) { 
+        try { 
+            userService.updatePassword(updatePasswordDto); 
+            return ResponseEntity.ok("Contraseña actualizada correctamente"); 
+        } catch (Exception e) { 
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar la contraseña: " + e.getMessage()); 
+        } 
+    }
+    /* 
+    @PostMapping("/request-password-reset") 
+public ResponseEntity<?> requestPasswordReset(@RequestBody @Valid RequestPasswordResetDto requestPasswordResetDto) {        
+        try { 
+            userService.requestPasswordReset(requestPasswordResetDto.getEmail()); 
+            return ResponseEntity.ok("Se ha enviado un enlace de restablecimiento de contraseña a su correo electrónico"); 
+        } catch (Exception e) { 
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al solicitar el restablecimiento de contraseña: " + e.getMessage()); 
+        } 
+    }
+    @PutMapping("/reset-password") 
+    public ResponseEntity<?> resetPassword(@RequestBody @Valid PasswordResetRequestDto passwordResetRequestDto) {        
+        try { 
+            userService.updatePasswordWithToken(passwordResetRequestDto); 
+            return ResponseEntity.ok("Contraseña actualizada correctamente"); 
+        } catch (Exception e) { 
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar la contraseña: " + e.getMessage()); 
+        } 
+    }
+    */
     @GetMapping("/profile") 
     public ResponseEntity<UserDto> getUserProfile(Authentication authentication) { 
         if (authentication == null || !authentication.isAuthenticated()) {

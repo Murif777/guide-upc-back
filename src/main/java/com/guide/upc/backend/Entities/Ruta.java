@@ -1,5 +1,6 @@
 package com.guide.upc.backend.entities;
 
+//import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -22,6 +23,7 @@ public class Ruta {
     @NotNull
     @ManyToOne
     @JoinColumn(name = "usuario_id")
+   // @JsonManagedReference  Evitar recursión infinita
     private User usuario;
 
     @NotNull
@@ -30,9 +32,8 @@ public class Ruta {
     @NotNull
     private String lugarLlegada;
 
-    @NotNull
-    private int distancia;
-
-    @NotNull
-    private String direccion; // Norte, Sur, Este, Oeste
+    @Override
+    public String toString() {
+        return "Ruta{id=" + id + ", lugarPartida='" + lugarPartida + '\'' + ", lugarLlegada='" + lugarLlegada + '\'' + '}';
+    }
 }

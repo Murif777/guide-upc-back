@@ -5,42 +5,30 @@ import com.guide.upc.backend.entities.User;
 import com.guide.upc.backend.repositories.RutaRepository;
 import com.guide.upc.backend.repositories.UserRepository;
 import com.guide.upc.backend.services.RutaService;
-
-import jakarta.transaction.Transactional;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@RequiredArgsConstructor
 @Service
 public class RutaServiceImpl implements RutaService {
 
-    @Autowired
-    private RutaRepository rutaRepository;
-
-    @Autowired
-    private UserRepository userRepository;
+    private final RutaRepository rutaRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
-    public Ruta crearRuta(Long usuarioId, String lugarPartida, String lugarLlegada, int distancia, String direccion) {
-        User usuario = userRepository.findById(usuarioId)
+    public Ruta guardarRuta(Ruta ruta) {
+        User usuario = userRepository.findById(ruta.getUsuario().getId())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        Ruta ruta = Ruta.builder()
-                .usuario(usuario)
-                .lugarPartida(lugarPartida)
-                .lugarLlegada(lugarLlegada)
-                .distancia(distancia)
-                .direccion(direccion)
-                .build();
-
+        ruta.setUsuario(usuario);
         return rutaRepository.save(ruta);
     }
 
     @Override
-    @Transactional
     public List<Ruta> obtenerRutasPorUsuario(Long usuarioId) {
         return rutaRepository.findByUsuarioId(usuarioId);
     }

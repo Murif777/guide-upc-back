@@ -2,6 +2,7 @@ package com.guide.upc.backend.services;
 
 import com.guide.upc.backend.dtos.CredentialsDto;
 import com.guide.upc.backend.dtos.SignUpDto;
+import com.guide.upc.backend.dtos.UpdatePasswordDto;
 import com.guide.upc.backend.dtos.UserDto;
 import com.guide.upc.backend.entities.User;
 import com.guide.upc.backend.exceptions.AppException;
@@ -34,7 +35,7 @@ public class UserService {
 
     private final Path root = Paths.get("uploads"); // Directorio donde se guardarán las fotos
 
-    @Transactional()
+    @Transactional
     public UserDto login(CredentialsDto credentialsDto) {
         User user = userRepository.findByLogin(credentialsDto.getLogin())
                 .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
@@ -72,11 +73,8 @@ public class UserService {
         return userMapper.toUserDto(user);
     }
    
-
-
-        // Método actualizado para no permitir cambiar el campo login
-        @Transactional
-public User updateUser(String login, Long id, String nombre, String apellido, MultipartFile foto) throws IOException {
+    @Transactional
+    public User updateUser(String login, Long id, String nombre, String apellido, MultipartFile foto) throws IOException {
         // Primero buscamos el usuario por login
         User user = userRepository.findByLogin(login)
                 .orElseThrow(() -> new AppException("Usuario no encontrado", HttpStatus.NOT_FOUND));
@@ -124,6 +122,46 @@ public User updateUser(String login, Long id, String nombre, String apellido, Mu
         }
     }
 
+    @Transactional 
+    public void updatePassword(UpdatePasswordDto updatePasswordDto) throws Exception { 
+        User user = userRepository.findByLogin(updatePasswordDto.getLogin()) 
+        .orElseThrow(() -> new RuntimeException("Usuario no encontrado")); 
+        
+        if (!passwordEncoder.matches(updatePasswordDto.getOldPassword(), user.getContraseña())) { 
+            throw new RuntimeException("La contraseña antigua no es correcta"); 
+        } 
+        user.setContraseña(passwordEncoder.encode(updatePasswordDto.getNewPassword())); 
+        userRepository.save(user); 
+    }
+    /* 
+    @Transactional 
+    public void requestPasswordReset(String login) throws Exception { 
+        UserDto user = userRepository.findByLogin(login) 
+        .orElseThrow(() -> new RuntimeException("Usuario no encontrado")); 
+        
+        String token = UUID.randomUUID().toString(); 
+        user.setResetToken(token); 
+        userRepository.save(user); 
+        
+        SimpleMailMessage passwordResetEmail = new SimpleMailMessage(); 
+        passwordResetEmail.setTo(user.getEmail()); 
+        passwordResetEmail.setSubject("Restablecimiento de contraseña"); 
+        passwordResetEmail.setText("Para restablecer su contraseña, haga clic en el siguiente enlace: " + 
+        "http://localhost:8080/reset-password?token=" + token); 
+        mailSender.send(passwordResetEmail); 
+    }
+
+    @Transactional 
+    public void updatePasswordWithToken(PasswordResetRequestDto passwordResetRequestDto) throws Exception { 
+        User user = userRepository.findByResetToken(passwordResetRequestDto.getToken()) 
+            .orElseThrow(() -> new RuntimeException("Token no válido")); 
+
+        user.setContraseña(passwordEncoder.encode(passwordResetRequestDto.getNewPassword())); 
+        user.setResetToken(null); // Elimina el token después de usarlo 
+        userRepository.save(user); 
+    }
+
+    */
     private String savePhoto(MultipartFile photo) throws IOException {
         // Asegurar que el directorio existe
         if (!Files.exists(root)) {

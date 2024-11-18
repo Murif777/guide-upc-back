@@ -15,15 +15,9 @@ public class RutaController {
     @Autowired
     private RutaService rutaService;
 
-    @PostMapping
-    public ResponseEntity<Ruta> crearRuta(
-            @RequestParam Long usuarioId,
-            @RequestParam String puntoPartida,
-            @RequestParam String puntoLlegada,
-            @RequestParam int distanciaEnPasos,
-            @RequestParam String direccion) {
-
-        Ruta nuevaRuta = rutaService.crearRuta(usuarioId, puntoPartida, puntoLlegada, distanciaEnPasos, direccion);
+    @PostMapping("/save")
+    public ResponseEntity<Ruta> guardarRuta(@RequestBody Ruta ruta) {
+        Ruta nuevaRuta = rutaService.guardarRuta(ruta);
         return ResponseEntity.ok(nuevaRuta);
     }
 
