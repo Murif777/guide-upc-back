@@ -103,7 +103,6 @@ public class UserService {
                         // Continuamos con la actualización aunque no se pueda eliminar la foto anterior
                     }
                 }
-
                 String photoPath = savePhoto(foto);
                 System.out.println("----FOTO PATH: "+photoPath);
                 user.setFoto(photoPath);

@@ -32,7 +32,7 @@ public class AuthController {
         userDto.setToken(userAuthenticationProvider.createToken(userDto.getLogin()));
         return ResponseEntity.ok(userDto);
     }
-
+    
     @PostMapping("/register")
     public ResponseEntity<UserDto> register(@RequestBody @Valid SignUpDto user) {
         System.out.println("Datos recibidos para registro controller: " + user);

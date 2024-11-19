@@ -43,6 +43,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/rutas/usuario/{usuarioId}").authenticated()
                     .requestMatchers(HttpMethod.POST, "/api/segmentos").authenticated()
                     .requestMatchers(HttpMethod.POST, "/api/process-image").authenticated()
+                    .requestMatchers(HttpMethod.POST,"/api/upload").permitAll()
                     .requestMatchers("/uploads/**").permitAll() 
                     .anyRequest().authenticated()
             );

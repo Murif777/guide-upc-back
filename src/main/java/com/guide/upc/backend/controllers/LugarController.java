@@ -49,7 +49,7 @@ public class LugarController {
 
         try {
             // Guardar la imagen utilizando StorageService
-            String fotoUrl = storageService.store(file);
+            String fotoUrl = storageService.savePhoto(file);
 
             // Crear el objeto Lugar y establecer la URL de la imagen
             Lugar lugar = Lugar.builder()
@@ -73,6 +73,12 @@ public class LugarController {
     @PutMapping("/{id}")
     public ResponseEntity<Lugar> updateLugar(@PathVariable Long id, @RequestBody Lugar lugar) {
         Lugar updatedLugar = lugarService.update(id, lugar);
+        return ResponseEntity.ok(updatedLugar);
+    }
+    
+    @PutMapping("/pic/{id}")
+    public ResponseEntity<Lugar> updateLugarPic(@PathVariable Long id, @RequestBody MultipartFile foto) {
+        Lugar updatedLugar = lugarService.updateLugarPic(id, foto);
         return ResponseEntity.ok(updatedLugar);
     }
 

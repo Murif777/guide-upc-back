@@ -23,8 +23,8 @@ public class Lugar {
     @Size(max = 100)
     private String nombre;
 
-    @Column(name = "descripcion", nullable = false)
-    @Size(max = 255)
+    @Column(name = "descripcion", nullable = true)
+    @Size(max = 2000)
     private String descripcion;
 
     @Column(name = "foto", nullable = true)
