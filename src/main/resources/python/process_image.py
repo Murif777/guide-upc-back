@@ -2,7 +2,8 @@ import cv2
 import numpy as np
 import sys
 import json
-import base64
+from pyzbar import pyzbar
+
 
 def process_image(image_path):
     # Lee la imagen
@@ -10,50 +11,69 @@ def process_image(image_path):
     
     # Convierte a HSV
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    #detector del qr
+    qrdetector= pyzbar.decode(frame)
     
     # Define los rangos de colores  
     color_ranges = {
         'blue': ([100, 150, 50], [140, 255, 255]),
-        'green': ([40, 50, 50], [80, 255, 255]),
-        'red': ([0, 120, 70], [10, 255, 255]),
-        'yellow': ([20, 150, 150], [30, 255, 255])
+       # 'green': ([40, 50, 50], [80, 255, 255]),
+        #'red': ([0, 120, 70], [10, 255, 255]),
+        #'yellow': ([20, 100, 100], [30, 255, 255]),
     }
     
-    results = {}
+    results = {
+        'qr_data': '',
+        'message': '',
+    }
+    if qrdetector:
+        qr_data = [obj.data.decode("utf-8") for obj in qrdetector]
+        results['qr_data'] = qr_data
+        print("ESCANEO"+qr_data);
     
     for color_name, (lower, upper) in color_ranges.items():
         # Crear máscara para el color
         mask = cv2.inRange(hsv, np.array(lower), np.array(upper))
         
-        if color_name == 'red':
-            # Añadir segundo rango para rojo
-            lower_red2 = np.array([170, 120, 70])
-            upper_red2 = np.array([180, 255, 255])
-            mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
-            mask = cv2.bitwise_or(mask, mask2)
-        
-        # Detectar círculos
-        blurred = cv2.GaussianBlur(mask, (9, 9), 2)
-        circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, dp=1, minDist=50,
-                                 param1=50, param2=30, minRadius=20, maxRadius=100)
-        
-        if circles is not None:
-            circles = np.uint16(np.around(circles))
-            results[color_name] = {
-                'detected': True,
-                'count': len(circles[0]),
-                'positions': [[int(x), int(y), int(r)] for x, y, r in circles[0]]
-            }
-        else:
-            results[color_name] = {
-                'detected': False,
-                'count': 0,
-                'positions': []
-            }
-    
-    # Guardar imagen procesada
-    cv2.imwrite('output.png', frame)
-    
+       # if color_name == 'yellow':
+#     # Detectar círculos amarillos
+#     blurred = cv2.GaussianBlur(mask, (9, 9), 2)  # Aplicar desenfoque Gaussiano para suavizar la imagen
+#     circlesyellow = cv2.HoughCircles(
+#         blurred, cv2.HOUGH_GRADIENT, dp=1,
+#         minDist=50, param1=50, param2=30, minRadius=20, maxRadius=100
+#     )
+#     if circlesyellow is not None:
+#         results['message'] = 'Estas son las intercepciones'
+#         break
+#
+# if color_name == 'red':
+#     # Detectar círculos rojos
+#     blurred = cv2.GaussianBlur(mask, (9, 9), 2)  # Aplicar desenfoque Gaussiano para suavizar la imagen
+#     circlesred = cv2.HoughCircles(
+#         blurred, cv2.HOUGH_GRADIENT, dp=1,
+#         minDist=50, param1=50, param2=30, minRadius=20, maxRadius=100
+#     )
+#     if circlesred is not None:
+#         results['message'] = 'Estas son la de las entradas'
+#         break
+#
+# if color_name == 'green':
+#     # Detectar círculos verdes
+#     blurred = cv2.GaussianBlur(mask, (9, 9), 2)  # Aplicar desenfoque Gaussiano para suavizar la imagen
+#     circles = cv2.HoughCircles(
+#         blurred, cv2.HOUGH_GRADIENT, dp=1, minDist=50,
+#         param1=50, param2=30, minRadius=20, maxRadius=100
+#     )
+#     if circles is not None:
+#         results['message'] = 'Estas son de los puntos importantes'
+#         # Aquí se asume que los puntos importantes están relacionados con zonas clave como la biblioteca o bloques importantes.
+#         break
+
+
+        if color_name == 'blue' and cv2.countNonZero(mask) > 0:
+            results['message'] = 'Este es el de el camino'
+            break
+
     return results
 
 if __name__ == "__main__":

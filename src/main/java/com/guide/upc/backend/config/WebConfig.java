@@ -32,9 +32,11 @@ public class WebConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://192.168.1.1:5173");
-        config.addAllowedOrigin("http://localhost:5173");
-
+        config.setAllowedOriginPatterns(Arrays.asList(
+            "http://192.168.183.203:5173",
+            "http://localhost:5173",
+            "http://192.168.1.1:5173"
+        ));
         config.setAllowedHeaders(Arrays.asList(
                 HttpHeaders.AUTHORIZATION,
                 HttpHeaders.CONTENT_TYPE,
