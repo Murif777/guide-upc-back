@@ -44,6 +44,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/api/segmentos").authenticated()
                     .requestMatchers(HttpMethod.POST, "/api/process-image").permitAll()
                     .requestMatchers(HttpMethod.POST,"/api/upload").permitAll()
+                    .requestMatchers(HttpMethod.POST,"/api/telegram/**").authenticated()
                     .requestMatchers("/uploads/**").permitAll() 
                     .anyRequest().authenticated()
             );
