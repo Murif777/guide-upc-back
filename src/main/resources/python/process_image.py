@@ -5,37 +5,43 @@ import json
 from pyzbar import pyzbar
 
 def process_image(image_path):
-    # Read the image
+    # Leer la imagen
     frame = cv2.imread(image_path)
 
-    # Convert to HSV
+    # Convertir a HSV
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    # Detect QR code
+    # Detectar QR code
     qrdetector = pyzbar.decode(frame)
 
-    # Define color ranges
-    color_ranges = {
-        'blue': ([100, 150, 50], [140, 255, 255]),
-    }
+    # Rango de color azul
+    lower_blue = np.array([100, 150, 50])
+    upper_blue = np.array([140, 255, 255])
 
     results = {
-        'qr_data': '',
+        'qr_data': [],
         'message': '',
+        'lines_detected': False,
     }
 
-    # Check for QR code
+    # Detectar códigos QR
     if qrdetector:
         qr_data = [obj.data.decode("utf-8") for obj in qrdetector]
         results['qr_data'] = qr_data
         results['message'] = f"{', '.join(qr_data)}"
 
-    # Check for blue color
-    for color_name, (lower, upper) in color_ranges.items():
-        mask = cv2.inRange(hsv, np.array(lower), np.array(upper))
-        if color_name == 'blue' and cv2.countNonZero(mask) > 0:
-            results['message'] = 'Blue detected'
-            break
+    # Crear máscara para azul
+    mask = cv2.inRange(hsv, lower_blue, upper_blue)
+
+    # Detectar bordes
+    edges = cv2.Canny(mask, 50, 150)
+
+    # Detectar líneas
+    lines = cv2.HoughLinesP(edges, rho=1, theta=np.pi / 180, threshold=50, minLineLength=50, maxLineGap=10)
+
+    if lines is not None:
+        results['lines_detected'] = True
+        results['message'] = 'Blue line detected'
 
     return results
 

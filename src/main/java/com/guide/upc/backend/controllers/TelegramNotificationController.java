@@ -24,12 +24,12 @@ public class TelegramNotificationController {
         String location = payload.get("location");
         String message = "🆘 Solicitud de Ayuda\n\nUbicación: " + location;
         
-        String telegramApiUrl = String.format("https://api.telegram.org/bot%s/sendMessage", "7516176427:AAFG4ngSKe1cb36S_LQjhuZUUU9RHQt2L7o");
+        String telegramApiUrl = String.format("https://api.telegram.org/bot%s/sendMessage", "8164734613:AAGzKw7DMzZu0w7w-WShQAA5m8Ech-MwuTs");
         
         RestTemplate restTemplate = new RestTemplate();
         
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("chat_id", "5069707904");
+        params.add("chat_id", "7220485574");
         params.add("text", message);
         
         try {
