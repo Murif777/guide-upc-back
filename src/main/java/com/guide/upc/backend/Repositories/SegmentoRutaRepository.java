@@ -7,4 +7,5 @@ import java.util.List;
 public interface SegmentoRutaRepository extends JpaRepository<SegmentoRuta, Long> {
     @SuppressWarnings("null")
     List<SegmentoRuta> findAll();
+
 }

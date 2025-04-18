@@ -33,7 +33,7 @@ public class SecurityConfig {
                 authorizeRequests
                     .requestMatchers(HttpMethod.POST, "/login", "/register").permitAll()
                     .requestMatchers(HttpMethod.GET, "/profile").authenticated()
-                    .requestMatchers(HttpMethod.GET, "/api/lugares/**").authenticated()
+                    .requestMatchers(HttpMethod.GET, "/api/lugares/**").permitAll() 
                     .requestMatchers(HttpMethod.POST, "/api/lugares/**").authenticated() 
                     .requestMatchers(HttpMethod.PUT, "/api/lugares/**").authenticated() 
                     .requestMatchers(HttpMethod.DELETE, "/api/lugares/**").authenticated() 
@@ -45,6 +45,10 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/api/process-image").permitAll()
                     .requestMatchers(HttpMethod.POST,"/api/upload").permitAll()
                     .requestMatchers(HttpMethod.POST,"/api/telegram/**").authenticated()
+                    .requestMatchers(HttpMethod.GET,"/api/ia-navegacion/**").permitAll() 
+                    .requestMatchers(HttpMethod.POST,"/api/ia-navegacion/**").permitAll() 
+                    .requestMatchers(HttpMethod.PUT,"/api/ia-navegacion/**").permitAll() 
+
                     .requestMatchers("/uploads/**").permitAll() 
                     .anyRequest().authenticated()
             );

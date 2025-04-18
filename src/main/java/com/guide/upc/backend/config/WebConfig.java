@@ -35,7 +35,8 @@ public class WebConfig {
         config.setAllowedOriginPatterns(Arrays.asList(
             "http://192.168.183.203:5173",
             "http://localhost:5173",
-            "http://192.168.1.2:5173"
+            "http://192.168.1.2:5173",
+            "http://localhost:8081"
         ));
         config.setAllowedHeaders(Arrays.asList(
                 HttpHeaders.AUTHORIZATION,
