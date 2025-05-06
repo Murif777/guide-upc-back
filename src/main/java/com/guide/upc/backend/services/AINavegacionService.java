@@ -58,10 +58,12 @@ public class AINavegacionService {
         Map<String, Object> informacionRuta = null;
         if (esConsultaDeRuta(consultaTexto) && origen != null && destino != null) {
             informacionRuta = rutasRepository.obtenerMejorRuta(origen, destino);
+            System.out.println("----------Información de ruta: " + origen + " a " + destino );
         }
 
         String contexto = construirContextoOptimizado(lugares, informacionRuta, consultaTexto);
         String promptFinal = generarPromptParaIA(consultaTexto, contexto);
+        System.out.println("Prompt enviado a Gemini: " + promptFinal);
         String respuestaIA = llamarAPIGemini(promptFinal);
         
         cacheRespuestas.put(consultaTexto, respuestaIA);
@@ -124,12 +126,34 @@ public class AINavegacionService {
         Set<String> lugaresIdentificados = new HashSet<>();
         List<Lugar> todosLosLugares = lugaresRepository.findAll();
         
+        // Convertir la consulta a minúsculas y dividirla en palabras
+        String[] palabrasConsulta = consulta.toLowerCase().split("\\s+");
+        
         for (Lugar lugar : todosLosLugares) {
-            if (consulta.contains(lugar.getNombre().toLowerCase())) { 
+            String nombreLugar = lugar.getNombre().toLowerCase();
+            
+            // Verificar coincidencia exacta primero
+            if (nombreLugar.contains(consulta.toLowerCase())) {
                 lugaresIdentificados.add(lugar.getNombre());
+                continue;
+            }
+
+            // Si no hay coincidencia exacta, buscar por palabras
+            for (String palabraConsulta : palabrasConsulta) {
+                // Solo considerar palabras de 3 o más caracteres para evitar falsos positivos
+                if (palabraConsulta.length() >= 3 && nombreLugar.contains(palabraConsulta)) {
+                    lugaresIdentificados.add(lugar.getNombre());
+                    break;
+                }
             }
         }
+        
+        //System.out.println("Lugares identificados en la consulta: " + lugaresIdentificados);
         return lugaresIdentificados;
+    }
+
+    private String normalizarNombreLugar(String nombre) {
+        return nombre != null ? nombre.replace("_", " ") : nombre;
     }
 
     private String construirContextoOptimizado(List<Lugar> lugares, Map<String, Object> informacionRuta, String consulta) {
@@ -137,39 +161,37 @@ public class AINavegacionService {
         contexto.append("Contexto sobre la universidad:\n");
 
         // Añadir información de lugares relevantes
+        boolean incluirDescripcion = consulta.contains("descripcion");
         for (Lugar lugar : lugares) {
-            contexto.append("- ").append(lugar.getNombre())
-                   .append(": ").append(lugar.getDescripcion());
+            contexto.append("- ").append(lugar.getNombre());
+            if (incluirDescripcion) {
+                contexto.append(": ").append(lugar.getDescripcion());
+            }
+            contexto.append("\n");
         }
 
         // Añadir información de rutas si es relevante y si hay información de ruta disponible
         if (esConsultaDeRuta(consulta) && informacionRuta != null) {
             contexto.append("\nRuta recomendada:\n");
             
-            // Obtener el camino de la ruta
             @SuppressWarnings("unchecked")
             List<String> path = (List<String>) informacionRuta.get("path");
             
-            if (path != null && path.size() > 1) {
-                contexto.append("- Ruta: ");
-                for (int i = 0; i < path.size(); i++) {
-                    contexto.append(path.get(i));
-                    if (i < path.size() - 1) {
-                        contexto.append(" → ");
-                    }
-                }
-                contexto.append("\n");
-            }
-            
-            // Obtener las instrucciones de la ruta
             @SuppressWarnings("unchecked")
             List<String> instructions = (List<String>) informacionRuta.get("instructions");
             
-            if (instructions != null && !instructions.isEmpty()) {
-                contexto.append("\nInstrucciones paso a paso:\n");
-                for (int i = 0; i < instructions.size(); i++) {
-                    contexto.append(i + 1).append(". ").append(instructions.get(i)).append("\n");
+            if (path != null && instructions != null && path.size() > 1 && instructions.size() > 0) {
+                for (int i = 0; i < path.size() - 1; i++) {
+                    contexto.append("desde ")
+                           .append(normalizarNombreLugar(path.get(i)))
+                           .append(" ")
+                           .append(instructions.get(i))
+                           .append(" ")
+                           .append("luego ");
                 }
+                // Agregar el destino final
+                contexto.append(normalizarNombreLugar(path.get(path.size() - 1)));
+                contexto.append("\n");
             }
         }
 
@@ -177,7 +199,7 @@ public class AINavegacionService {
     }
 
     private boolean esConsultaDeRuta(String consulta) {
-        String[] palabrasClave = {"como llegar", "ruta", "camino", "ir a", "llegar a", "desde", "hasta","ir hacia"};
+        String[] palabrasClave = {"como llegar", "ruta", "camino", "ir", "desde", "hasta","hacia","desde", "hacia","al", "a la","ala"};
         consulta = consulta.toLowerCase();
         
         for (String palabra : palabrasClave) {
@@ -196,8 +218,9 @@ public class AINavegacionService {
             
             Consulta del usuario: %s
             
-            Responde de manera clara, corta, precisa y amigable. Si la consulta es sobre una ruta, incluye instrucciones paso a paso.
-            Si no tienes suficiente información, indícalo amablemente. es importante que solo respondas de acuerdo a la informacion suministrada de acuerdo al contexto sin emojis y sin extenderte mucho
+            Responde de manera clara, corta, precisa y amigable(no saludes, solo muestra aptitud servicial siempre atento si el usuario necesita algo mas). Si la consulta es sobre una ruta, incluye instrucciones paso a paso 
+            ten en cuenta que el usuario es una persona con discapacidad visual y no puede ver, por lo que debes explicar bien la ruta.
+            Si no tienes suficiente información, indícalo amablemente. es importante que solo respondas de acuerdo a la informacion suministrada de acuerdo al contexto sin emojis ni ningun tipo de formato en el texto y sin extenderte mucho
             si la respuesta a una consulta contiene varias opciones indicalas de manera breve 
             """, contexto, consulta);
     }

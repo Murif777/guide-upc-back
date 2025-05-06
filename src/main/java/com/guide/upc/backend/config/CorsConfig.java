@@ -19,7 +19,8 @@ public class CorsConfig {
                             "http://192.168.1.2:5173",
                             "http://192.168.183.203:5173",
                             "http://localhost:5173",
-                            "http://localhost:8081"
+                            "http://localhost:8081",
+                            "http://192.168.1.1:8081"
                         )
 
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
