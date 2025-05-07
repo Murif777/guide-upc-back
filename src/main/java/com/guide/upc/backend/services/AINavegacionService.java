@@ -218,10 +218,10 @@ public class AINavegacionService {
             
             Consulta del usuario: %s
             
-            Responde de manera clara, corta, precisa y amigable(no saludes, solo muestra aptitud servicial siempre atento si el usuario necesita algo mas). Si la consulta es sobre una ruta, incluye instrucciones paso a paso 
-            ten en cuenta que el usuario es una persona con discapacidad visual y no puede ver, por lo que debes explicar bien la ruta.
-            Si no tienes suficiente información, indícalo amablemente. es importante que solo respondas de acuerdo a la informacion suministrada de acuerdo al contexto sin emojis ni ningun tipo de formato en el texto y sin extenderte mucho
-            si la respuesta a una consulta contiene varias opciones indicalas de manera breve 
+            Responde de forma clara, breve, precisa y amable. No incluyas saludos ni emojis; mantén siempre una actitud servicial y disponible.
+            Si la consulta es sobre una ruta, ofrece instrucciones paso a paso, describiendo con detalle cada referencia, pensando en que el usuario tiene discapacidad visual.
+            Si falta información, indícalo amablemente.
+            Limítate exclusivamente a la información proporcionada en el contexto.Si la respuesta incluye varias opciones, preséntalas de manera muy concisa.
             """, contexto, consulta);
     }
 
