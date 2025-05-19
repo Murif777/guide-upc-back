@@ -44,7 +44,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/api/segmentos").authenticated()
                     .requestMatchers(HttpMethod.POST, "/api/process-image").permitAll()
                     .requestMatchers(HttpMethod.POST,"/api/upload").permitAll()
-                    .requestMatchers(HttpMethod.POST,"/api/telegram/**").authenticated()
+                    .requestMatchers(HttpMethod.POST,"/api/telegram/**").permitAll()
                     .requestMatchers(HttpMethod.GET,"/api/ia-navegacion/**").permitAll() 
                     .requestMatchers(HttpMethod.POST,"/api/ia-navegacion/**").permitAll() 
                     .requestMatchers(HttpMethod.PUT,"/api/ia-navegacion/**").permitAll() 

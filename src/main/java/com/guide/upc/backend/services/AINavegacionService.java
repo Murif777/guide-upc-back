@@ -6,6 +6,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+
 import com.guide.upc.backend.entities.Lugar;
 import com.guide.upc.backend.repositories.LugarRepository;
 
@@ -28,18 +29,22 @@ public class AINavegacionService {
 
     @Value("${GEMINI_API_KEY}") 
     private String API_KEY;
+
+
     @PostConstruct
     public void init() {
+        // Validación de API Key
         if (API_KEY == null || API_KEY.isEmpty()) {
             throw new IllegalStateException("La API key de Gemini no está configurada");
         }
-        System.out.println("API Key de Gemini cargada correctamente");
+        
     }
     
     private final Map<String, String> cacheRespuestas = new ConcurrentHashMap<>();
 
     public String procesarConsulta(String consultaTexto) {
-        consultaTexto = consultaTexto.toLowerCase();
+        consultaTexto = eliminarAcentos(consultaTexto.toLowerCase());
+    
         
         if (cacheRespuestas.containsKey(consultaTexto)) {
             return cacheRespuestas.get(consultaTexto);
@@ -98,7 +103,7 @@ public class AINavegacionService {
     
     private String determinarDestinoDesdeConsulta(String consulta, Set<String> lugaresIdentificados) {
         // Implementación básica para extraer el destino de la consulta
-        List<String> palabrasClave = Arrays.asList("hasta", "hacia", "llegar a", "ir a");
+        List<String> palabrasClave = Arrays.asList("hasta", "hacia", "llegar");
         
         for (String palabra : palabrasClave) {
             int index = consulta.indexOf(palabra);
@@ -126,30 +131,105 @@ public class AINavegacionService {
         Set<String> lugaresIdentificados = new HashSet<>();
         List<Lugar> todosLosLugares = lugaresRepository.findAll();
         
-        // Convertir la consulta a minúsculas y dividirla en palabras
-        String[] palabrasConsulta = consulta.toLowerCase().split("\\s+");
+        // Normalizar la consulta: minúsculas y eliminar puntuación
+        String consultaNormalizada = consulta.toLowerCase().replaceAll("[.,;:!?]", "");
         
+        // Primero, intentar buscar coincidencias de frases completas
         for (Lugar lugar : todosLosLugares) {
             String nombreLugar = lugar.getNombre().toLowerCase();
-            
-            // Verificar coincidencia exacta primero
-            if (nombreLugar.contains(consulta.toLowerCase())) {
+            if (consultaNormalizada.contains(nombreLugar)) {
                 lugaresIdentificados.add(lugar.getNombre());
-                continue;
             }
-
-            // Si no hay coincidencia exacta, buscar por palabras
-            for (String palabraConsulta : palabrasConsulta) {
-                // Solo considerar palabras de 3 o más caracteres para evitar falsos positivos
-                if (palabraConsulta.length() >= 3 && nombreLugar.contains(palabraConsulta)) {
-                    lugaresIdentificados.add(lugar.getNombre());
-                    break;
+        }
+        
+        // Si no encontramos coincidencias exactas, usamos un enfoque más sofisticado
+        if (lugaresIdentificados.isEmpty()) {
+            // Crear un mapa de lugares por su nombre normalizado
+            Map<String, List<Lugar>> lugaresMap = new HashMap<>();
+            for (Lugar lugar : todosLosLugares) {
+                String[] palabrasLugar = lugar.getNombre().toLowerCase().split("\\s+");
+                for (String palabra : palabrasLugar) {
+                    if (palabra.length() >= 3) { // Solo palabras significativas
+                        lugaresMap.computeIfAbsent(palabra, k -> new ArrayList<>()).add(lugar);
+                    }
+                }
+            }
+            
+            // Buscar frases que puedan ser lugares usando patrones comunes
+            String[] patrones = {"desde", "hacia", "hasta", "a la", "al", "en la", "en el"};
+            for (String patron : patrones) {
+                int index = consultaNormalizada.indexOf(patron);
+                if (index != -1) {
+                    String fragmento = consultaNormalizada.substring(index + patron.length()).trim();
+                    // Cortar en la siguiente preposición, si existe
+                    for (String otroPatron : patrones) {
+                        int finFragmento = fragmento.indexOf(" " + otroPatron + " ");
+                        if (finFragmento != -1) {
+                            fragmento = fragmento.substring(0, finFragmento);
+                        }
+                    }
+                    
+                    // Buscar el lugar más largo que coincida con este fragmento
+                    String mejorLugar = null;
+                    int mejorLongitud = 0;
+                    
+                    for (Lugar lugar : todosLosLugares) {
+                        String nombreLugar = lugar.getNombre().toLowerCase();
+                        if (fragmento.contains(nombreLugar) && nombreLugar.length() > mejorLongitud) {
+                            mejorLugar = lugar.getNombre();
+                            mejorLongitud = nombreLugar.length();
+                        }
+                    }
+                    
+                    if (mejorLugar != null) {
+                        lugaresIdentificados.add(mejorLugar);
+                    }
+                }
+            }
+            
+            // Si aún no hay coincidencias, usar un enfoque de coincidencia parcial
+            if (lugaresIdentificados.isEmpty()) {
+                // Dividir la consulta en palabras
+                String[] palabrasConsulta = consultaNormalizada.split("\\s+");
+                
+                // Crear un mapa para contar coincidencias por lugar
+                Map<String, Integer> contadorCoincidencias = new HashMap<>();
+                
+                // Para cada palabra significativa en la consulta
+                for (String palabra : palabrasConsulta) {
+                    if (palabra.length() >= 3 && !esStopWord(palabra)) {
+                        // Buscar lugares que contengan esta palabra
+                        for (Lugar lugar : todosLosLugares) {
+                            String nombreLugar = lugar.getNombre().toLowerCase();
+                            if (nombreLugar.contains(palabra) || 
+                                nombreLugar.split("\\s+")[0].equals(palabra)) { // Dar prioridad a palabras iniciales
+                                contadorCoincidencias.merge(lugar.getNombre(), 1, Integer::sum);
+                            }
+                        }
+                    }
+                }
+                
+                // Ordenar lugares por número de coincidencias (de más a menos)
+                List<Map.Entry<String, Integer>> listaOrdenada = new ArrayList<>(contadorCoincidencias.entrySet());
+                listaOrdenada.sort(Map.Entry.<String, Integer>comparingByValue().reversed());
+                
+                // Tomar los 2 lugares con más coincidencias, si hay suficientes
+                int numLugaresASeleccionar = Math.min(2, listaOrdenada.size());
+                for (int i = 0; i < numLugaresASeleccionar; i++) {
+                    lugaresIdentificados.add(listaOrdenada.get(i).getKey());
                 }
             }
         }
         
-        //System.out.println("Lugares identificados en la consulta: " + lugaresIdentificados);
+        System.out.println("Lugares identificados en la consulta: " + lugaresIdentificados);
         return lugaresIdentificados;
+    }
+    
+    // Lista de palabras comunes que no deberían usarse para identificar lugares
+    private boolean esStopWord(String palabra) {
+        Set<String> stopWords = Set.of("desde", "hacia", "hasta", "quiero", "ir", "como", "llegar", "cual", "cuál", 
+                                      "donde", "dónde", "para", "está", "esta", "este", "esos", "esas", "estos");
+        return stopWords.contains(palabra);
     }
 
     private String normalizarNombreLugar(String nombre) {
@@ -186,6 +266,9 @@ public class AINavegacionService {
                            .append(normalizarNombreLugar(path.get(i)))
                            .append(" ")
                            .append(instructions.get(i))
+                           .append(" ")
+                           .append("para llegar a ")
+                           .append(normalizarNombreLugar(path.get(i+1)))
                            .append(" ")
                            .append("luego ");
                 }
@@ -263,5 +346,14 @@ public class AINavegacionService {
         return lista.stream()
                    .limit(limite)
                    .toList();
+    }
+
+    private String eliminarAcentos(String texto) {
+        if (texto == null) {
+            return null;
+        }
+        
+        String normalizado = java.text.Normalizer.normalize(texto, java.text.Normalizer.Form.NFD);
+        return normalizado.replaceAll("[^\\p{ASCII}]", "");
     }
 }
